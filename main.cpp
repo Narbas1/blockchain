@@ -58,6 +58,34 @@ std::vector<std::array<uint32_t, 16>> blocks_to_words(const std::vector<std::arr
     return result;
 }
 
+void bit_and(std::vector<std::array<uint32_t, 16>> &words) {
+
+    for (auto &word_array : words){
+
+        for (int i = 0; i < 16; i += 2) {
+            uint32_t result = word_array[i] | word_array[i+1];
+            std::cout << "W" << i << " OR W" << i+1 
+                      << " = 0x" << std::hex << result << std::dec << "\n";
+        }
+
+    for (int i = 0; i < 16; i += 2) {
+        word_array[i] = word_array[i] | word_array[i + 1];
+    }
+    }
+}
+
+void bit_xor(std::vector<std::array<uint32_t, 16>> &blocks_words) {
+
+        for (auto &words : blocks_words) {
+            for (int i = 0; i < 4; ++i) {
+              words[i] ^= words[i + 4];
+            }
+        for (int i = 0; i < 8; ++i) {
+            words[i] ^= words[i + 8];
+        }
+    }
+
+}
 
 int main(){
 
@@ -70,6 +98,10 @@ int main(){
     padding(bytes);
     std::vector<std::array<u8, 64>> blocks = split(bytes);
 
+    std::vector<std::array<uint32_t, 16>> words = blocks_to_words(blocks);
+
+    bit_and(words);
+    bit_xor(words);
 
     return 0;
 }
