@@ -77,6 +77,26 @@ void bit_xor(std::vector<std::array<uint32_t,16>>& blocks_words) {
     }
 }
 
+void rotate_left(std::array<uint32_t,16>& words) {
+    std::array<uint32_t,16> temp = words;
+    for (int i = 0; i < 16; ++i) {
+        words[i] = temp[(i + 7) % 16];
+    }
+}
+
+void rotate_right(std::array<uint32_t,16>& words) {
+    std::array<uint32_t,16> temp = words;
+    for (int i = 0; i < 16; ++i) {
+        words[i] = temp[(i - 7 + 16) % 16];
+    }
+}
+
+void not_second_half(std::array<u32,16>& words) {
+    for (size_t i = 8; i < 16; i+=2) {
+        words[i] = ~words[i];
+    }
+}
+
 int main(){
 
     std::string input;
