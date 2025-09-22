@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <algorithm>
 #include <iomanip>
+#include <fstream>
 
 using u8 = uint8_t;
 using u32 = uint32_t;
@@ -77,20 +78,19 @@ void bit_xor(std::vector<std::array<uint32_t,16>>& blocks_words) {
     }
 }
 
-void rotate_left(std::array<uint32_t,16>& words) {
-    std::array<uint32_t,16> temp = words;
-    for (int i = 0; i < 16; ++i) {
-        words[i] = temp[(i + 7) % 16];
-    }
-}
+// void rotate_left(std::array<uint32_t,16>& words) {
+//     std::array<uint32_t,16> temp = words;
+//     for (int i = 0; i < 16; ++i) {
+//         words[i] = temp[(i + 7) % 16];
+//     }
+// }
 
-void rotate_right(std::array<uint32_t,16>& words) {
-    std::array<uint32_t,16> temp = words;
-    for (int i = 0; i < 16; ++i) {
-        words[i] = temp[(i - 7 + 16) % 16];
-    }
-}
-using u32 = uint32_t;
+// void rotate_right(std::array<uint32_t,16>& words) {
+//     std::array<uint32_t,16> temp = words;
+//     for (int i = 0; i < 16; ++i) {
+//         words[i] = temp[(i - 7 + 16) % 16];
+//     }
+// }
 
 std::array<u32,4> merge_all_blocks_into_digest(const std::vector<std::array<u32,16>>& blocks_words) {
     auto rotl32 = [] (u32 x, unsigned r) -> u32 {return (x << r) | (x >> (32 - r));};
@@ -134,27 +134,52 @@ std::array<u32,4> merge_all_blocks_into_digest(const std::vector<std::array<u32,
     return S;
 }
 
+std::array<u32,4> hash(const std::string &input) {
+    std::vector<u8> bytes = string_to_bytes(input);
+    padding(bytes);
+    std::vector<std::array<u8, 64>> blocks = split(bytes);
+    std::vector<std::array<uint32_t, 16>> words = blocks_to_words(blocks);
+    bit_or(words);
+    bit_xor(words);
+    return merge_all_blocks_into_digest(words);
+}
 
 int main(){
 
     std::string input;
 
-    std::cout << "Enter a message: ";
-    std::getline(std::cin, input);
+    std::cout << "Options: 1. Enter a string to hash" << std::endl;
+    std::cout << "         2. Hash files with singular character" << std::endl;
+    std::cout << "         3. Hash files with 3000 characters" << std::endl;
+    std::cout << "         4. Hash files that differ in 1 character" << std::endl;
+    std::cout << "         5. Test with file konstitucija.txt" << std::endl;
+    
+    int option;
+    std::cin >> option;
 
-    std::vector<u8> bytes = string_to_bytes(input);
-    padding(bytes);
-    std::vector<std::array<u8, 64>> blocks = split(bytes);
+    while(true){
 
-    std::vector<std::array<uint32_t, 16>> words = blocks_to_words(blocks);
+        if(option == 1){
+            std::cout << "Enter a string to hash: ";
+            std::cin.ignore();
+            std::getline(std::cin, input);
+            auto digest = hash(input);
+            std::cout << "Hash: ";
+            for (const auto &part : digest) {
+                std::cout << std::hex << std::setw(8) << std::setfill('0') << part;
+            }
+        }
 
-    bit_or(words);
-    bit_xor(words);
-    std::array<u32,4> digest = merge_all_blocks_into_digest(words);
-    std::cout << "Digest: ";
-    for(const auto &part : digest){
-        std::cout << std::hex << std::setw(8) << std::setfill('0') << part;
-    }
+        if(option == 2){
+            std::ifstream a("a.txt");
+            std::ifstream b("b.txt");
+
+            
+        }
+
+
+
+    
 
     return 0;
 }
