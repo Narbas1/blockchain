@@ -90,12 +90,50 @@ void rotate_right(std::array<uint32_t,16>& words) {
         words[i] = temp[(i - 7 + 16) % 16];
     }
 }
+using u32 = uint32_t;
 
-void not_second_half(std::array<u32,16>& words) {
-    for (size_t i = 8; i < 16; i+=2) {
-        words[i] = ~words[i];
+std::array<u32,4> merge_all_blocks_into_digest(const std::vector<std::array<u32,16>>& blocks_words) {
+    auto rotl32 = [] (u32 x, unsigned r) -> u32 {return (x << r) | (x >> (32 - r));};
+    auto rotr32 = [] (u32 x, unsigned r) -> u32 {return (x >> r) | (x << (32 - r));};
+    // Konstantos
+    constexpr u32 c1 = 0x243F6A88u; //pi
+    constexpr u32 c2 = 0x2B7E1516u; //e
+    constexpr u32 c3 = 0x6A09E667u; //sqrt(2)
+    constexpr u32 c4 = 0xBB67AE85u; //sqrt(3)
+
+    std::array<u32,4> S = {0x243F6A88u, 0x85A308D3u, 0x13198A2Eu, 0x03707344u}; //is sha-256
+
+    for (const auto& w : blocks_words) {
+        // Atsitiktiniai veiksmai su bitais
+        u32 m = ((w[0] & w[1]) | w[2] | w[3]) ^ w[4] ^ w[5];
+        m = m * c1;
+        m ^= ((w[6] & w[7]) | w[8]);
+        m ^= (w[9] & w[10]);
+        m = (m + (w[11] ^ (w[12] | w[13]))) * c2;
+        m ^= rotl32(w[14], 7) ^ rotr32(w[15], 3);
+
+        m ^= m >> 16;
+        m *= c3;
+        m ^= m >> 11;
+        m *= c4;
+        m ^= m >> 16;
+
+        S[0] = (rotl32(S[0] ^ m, 13)) * c1 + w[0];
+        S[1] = (rotr32(S[1] + m, 7))  ^ (w[5] | c2);
+        S[2] = (S[2] ^ (m * c3)) + rotl32(w[10], 11);
+        S[3] = (S[3] + (m ^ c4)) ^ rotr32(w[15], 3);
+
     }
+
+    for (auto& x : S) {
+        x ^= x >> 16; x *= c3;
+        x ^= x >> 13; x *= c4;
+        x ^= x >> 16;
+    }
+
+    return S;
 }
+
 
 int main(){
 
@@ -112,6 +150,11 @@ int main(){
 
     bit_or(words);
     bit_xor(words);
+    std::array<u32,4> digest = merge_all_blocks_into_digest(words);
+    std::cout << "Digest: ";
+    for(const auto &part : digest){
+        std::cout << std::hex << std::setw(8) << std::setfill('0') << part;
+    }
 
     return 0;
 }
