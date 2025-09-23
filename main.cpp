@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <iomanip>
 #include <fstream>
+#include <sstream>
 
 using u8 = uint8_t;
 using u32 = uint32_t;
@@ -124,7 +125,6 @@ std::array<u32,4> merge_all_blocks_into_digest(const std::vector<std::array<u32,
         S[3] = (S[3] + (m ^ c4)) ^ rotr32(w[15], 3);
 
     }
-
     for (auto& x : S) {
         x ^= x >> 16; x *= c3;
         x ^= x >> 13; x *= c4;
@@ -146,40 +146,140 @@ std::array<u32,4> hash(const std::string &input) {
 
 int main(){
 
-    std::string input;
-
-    std::cout << "Options: 1. Enter a string to hash" << std::endl;
-    std::cout << "         2. Hash files with singular character" << std::endl;
-    std::cout << "         3. Hash files with 3000 characters" << std::endl;
-    std::cout << "         4. Hash files that differ in 1 character" << std::endl;
-    std::cout << "         5. Test with file konstitucija.txt" << std::endl;
-    
-    int option;
-    std::cin >> option;
-
     while(true){
+        std::string input;
+
+        std::cout << "Options: 1. Enter a string to hash" << std::endl;
+        std::cout << "         2. Hash files with singular character" << std::endl;
+        std::cout << "         3. Hash files with 3000 random characters" << std::endl;
+        std::cout << "         4. Hash files that differ in 1 character" << std::endl;
+        std::cout << "         5. Hash empty file" << std::endl;
+        std::cout << "         6. Test with file konstitucija.txt" << std::endl;
+        int option;
+        std::cin >> option;
 
         if(option == 1){
             std::cout << "Enter a string to hash: ";
             std::cin.ignore();
             std::getline(std::cin, input);
+            
             auto digest = hash(input);
             std::cout << "Hash: ";
             for (const auto &part : digest) {
                 std::cout << std::hex << std::setw(8) << std::setfill('0') << part;
             }
+            std::cout << std::endl;
         }
 
         if(option == 2){
-            std::ifstream a("a.txt");
-            std::ifstream b("b.txt");
+            std::ifstream a("files/a.txt", std::ios::binary);
+            std::ifstream b("files/b.txt", std::ios::binary);
 
-            
+            std::ostringstream buffer;
+            buffer << a.rdbuf();
+            std::string content = buffer.str();
+
+            auto digest_a = hash(content);
+            std::cout << "Hash of a.txt: ";
+            for (const auto &part : digest_a) {
+                std::cout << std::hex << std::setw(8) << std::setfill('0') << part;
+            }
+            std::cout << std::endl;
+
+            buffer.clear();
+            buffer << b.rdbuf();
+            content = buffer.str();
+
+            auto digest_b = hash(content);
+            std::cout << "Hash of b.txt: ";
+            for (const auto &part : digest_b) {
+                std::cout << std::hex << std::setw(8) << std::setfill('0') << part;
+            }
+            std::cout << std::endl;
+
+
         }
 
+        if (option == 3) {
+            std::ifstream file1("files/random3000_1.txt", std::ios::binary);
+            std::ifstream file2("files/random3000_2.txt", std::ios::binary);
 
+            std::string content1((std::istreambuf_iterator<char>(file1)), {});
+            std::string content2((std::istreambuf_iterator<char>(file2)), {});
 
-    
+            auto digest1 = hash(content1);
+            std::cout << "Hash of random3000_1.txt: ";
+            for (const auto &part : digest1)
+                std::cout << std::hex << std::setw(8) << std::setfill('0') << part;
+            std::cout << std::endl;
+
+            auto digest2 = hash(content2);
+            std::cout << "Hash of random3000_2.txt: ";
+            for (const auto &part : digest2)
+                std::cout << std::hex << std::setw(8) << std::setfill('0') << part;
+            std::cout << std::endl;
+}
+
+        if(option == 4){
+            std::ifstream file1("files/random1.txt", std::ios::binary);
+            std::ifstream file2("files/random2.txt", std::ios::binary);
+
+            std::string content1((std::istreambuf_iterator<char>(file1)), {});
+            std::string content2((std::istreambuf_iterator<char>(file2)), {});
+
+            auto digest1 = hash(content1);
+            std::cout << "Hash of random1.txt: ";
+            for (const auto &part : digest1)
+                std::cout << std::hex << std::setw(8) << std::setfill('0') << part;
+            std::cout << std::endl;
+
+            auto digest2 = hash(content2);
+            std::cout << "Hash of random2.txt: ";
+            for (const auto &part : digest2)
+                std::cout << std::hex << std::setw(8) << std::setfill('0') << part;
+            std::cout << std::endl;
+        }
+
+        if(option == 5){
+            std::ifstream file("files/empty.txt", std::ios::binary);
+            std::string content((std::istreambuf_iterator<char>(file)), {});
+
+            auto digest = hash(content);
+            std::cout << "Hash of empty.txt: ";
+            for (const auto &part : digest)
+                std::cout << std::hex << std::setw(8) << std::setfill('0') << part;
+            std::cout << std::endl;
+        }
+
+        if(option == 6){
+
+            std::ifstream file("files/konstitucija.txt", std::ios::binary);
+
+            std::vector<std::string> lines;
+            std::string line;
+            while (std::getline(file, line)) {
+                lines.push_back(line + "\n");
+            }
+            std::vector<size_t> line_counts = {1,2,4,8,16,32,64,128, 256, 512, 789};
+
+            for (size_t n : line_counts) {
+                if (n > lines.size()) break;
+
+                std::string combined;
+                for (size_t i = 0; i < n; ++i) {
+                    combined += lines[i];
+                }
+
+                auto digest = hash(combined);
+                std::cout << "Hash of first " << std::dec << n << " lines: ";
+                for (const auto& part : digest) {
+                    std::cout << std::hex << std::setw(8) << std::setfill('0') << part;
+                }
+                std::cout << std::endl;
+            }
+        }
+
+    }
 
     return 0;
 }
