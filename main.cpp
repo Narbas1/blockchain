@@ -115,9 +115,9 @@ std::array<u32,4> merge_all_blocks_into_digest(const std::vector<std::array<u32,
 
         m ^= m >> 16;
         m *= c3;
-        m ^= m >> 11;
+        m ^= m >> 7;
         m *= c4;
-        m ^= m >> 16;
+        m ^= m >> 13;
 
         S[0] = (rotl32(S[0] ^ m, 13)) * c1 + w[0];
         S[1] = (rotr32(S[1] + m, 7))  ^ (w[5] | c2);
@@ -129,6 +129,10 @@ std::array<u32,4> merge_all_blocks_into_digest(const std::vector<std::array<u32,
         x ^= x >> 16; x *= c3;
         x ^= x >> 13; x *= c4;
         x ^= x >> 16;
+        x = rotl32(x ^ c1, 5) + rotr32(x ^ c2, 11);
+        x ^= (x * c3) + (x >> 7);
+        x = (x ^ (x << 3)) * c4;
+        x ^= rotl32(x, x & 13);
     }
 
     return S;
@@ -162,7 +166,7 @@ int main(){
             std::cout << "Enter a string to hash: ";
             std::cin.ignore();
             std::getline(std::cin, input);
-            
+
             auto digest = hash(input);
             std::cout << "Hash: ";
             for (const auto &part : digest) {
