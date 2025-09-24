@@ -8,6 +8,7 @@
 #include <iomanip>
 #include <fstream>
 #include <sstream>
+#include <chrono>
 
 using u8 = uint8_t;
 using u32 = uint32_t;
@@ -126,13 +127,16 @@ std::array<u32,4> merge_all_blocks_into_digest(const std::vector<std::array<u32,
 
     }
     for (auto& x : S) {
-        x ^= x >> 16; x *= c3;
-        x ^= x >> 13; x *= c4;
+        x ^= x >> 16;
+        x *= c3;
+        x ^= x >> 13;
+        x *= c4;
         x ^= x >> 16;
         x = rotl32(x ^ c1, 5) + rotr32(x ^ c2, 11);
         x ^= (x * c3) + (x >> 7);
         x = (x ^ (x << 3)) * c4;
-        x ^= rotl32(x, x & 13);
+        u32 r = ((x >> 27) | 1);
+        x ^= rotl32(x, r);
     }
 
     return S;
@@ -267,6 +271,7 @@ int main(){
             std::vector<size_t> line_counts = {1,2,4,8,16,32,64,128, 256, 512, 789};
 
             for (size_t n : line_counts) {
+
                 if (n > lines.size()) break;
 
                 std::string combined;
@@ -274,11 +279,16 @@ int main(){
                     combined += lines[i];
                 }
 
+                auto start = std::chrono::high_resolution_clock::now();
                 auto digest = hash(combined);
+                auto end = std::chrono::high_resolution_clock::now();
+                std::chrono::duration<double, std::milli> duration = end - start;
+
                 std::cout << "Hash of first " << std::dec << n << " lines: ";
                 for (const auto& part : digest) {
                     std::cout << std::hex << std::setw(8) << std::setfill('0') << part;
                 }
+                std::cout << " (Time: " << duration.count() << " ms)";
                 std::cout << std::endl;
             }
         }
