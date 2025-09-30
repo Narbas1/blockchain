@@ -12,7 +12,10 @@ With this program you can:
   3. Hash files with 3000 random characters,
   4. Hash files that differ in 1 character,
   5. Hash an empty file,
-  6. Do tests with konstitucija.txt.
+  6. Do tests with konstitucija.txt,
+  7. Generate string pairs for later collision test,
+  8. Collision test,
+  9. Avalanche test.
 
 ---
 
@@ -113,13 +116,12 @@ function COMPRESS_ALL_BLOCKS(all_blocks_words) -> array[4]u32
         x ← x * c4
         x ← x XOR (x >> 16)
 
-        // extra finishing you added:
         x ← ROTL32(x XOR c1, 5) + ROTR32(x XOR c2, 11)
         x ← x XOR ( x * c3 ) + ( x >> 7 )
         x ← ( x XOR (x << 3) ) * c4
         x ← x XOR ROTL32(x, (x & 13))
 
-    return S   // 4×u32 (128-bit digest)
+    return S
 ```
 
 
