@@ -9,10 +9,86 @@
 #include <fstream>
 #include <sstream>
 #include <chrono>
+#include <random>
+#include <limits>
 
 using u8 = uint8_t;
 using u32 = uint32_t;
 using u64 = uint64_t;
+
+std::array<u32,4> hash(const std::string &input);
+
+static const std::string CHARSET =
+    "abcdefghijklmnopqrstuvwxyz"
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    "0123456789";
+
+static inline unsigned popcount32(uint32_t x) {
+#if defined(__GNUG__) || defined(__clang__)
+    return static_cast<unsigned>(__builtin_popcount(x));
+#elif defined(_MSC_VER)
+    return static_cast<unsigned>(__popcnt(x));
+#else
+    unsigned c = 0;
+    while (x) { x &= (x - 1); ++c; }
+    return c;
+#endif
+}
+static inline unsigned digest_hamming(const std::array<u32,4>& A,
+                                      const std::array<u32,4>& B) {
+    unsigned d = 0;
+    d += popcount32(A[0] ^ B[0]);
+    d += popcount32(A[1] ^ B[1]);
+    d += popcount32(A[2] ^ B[2]);
+    d += popcount32(A[3] ^ B[3]);
+    return d;
+}
+
+std::pair<std::string, std::string>
+make_pair_one_diff(size_t L, std::mt19937& gen) {
+    std::uniform_int_distribution<size_t> dist_pos(0, L - 1);
+    std::uniform_int_distribution<size_t> dist_char(0, CHARSET.size() - 1);
+
+    std::string a; a.resize(L);
+    for (size_t i = 0; i < L; ++i) a[i] = CHARSET[dist_char(gen)];
+
+    std::string b = a;
+    size_t pos = dist_pos(gen);
+
+    char newc;
+    do { newc = CHARSET[dist_char(gen)]; } while (newc == a[pos]);
+    b[pos] = newc;
+
+    return {a, b};
+}
+
+void avalanche_stats_for_length(size_t L, size_t N, std::mt19937& gen) {
+    unsigned min_d = std::numeric_limits<unsigned>::max();
+    unsigned max_d = 0;
+    unsigned long long sum_d = 0ULL;
+
+    for (size_t i = 0; i < N; ++i) {
+        auto [s1, s2] = make_pair_one_diff(L, gen);
+
+        auto h1 = hash(s1);
+        auto h2 = hash(s2);
+
+        unsigned d = digest_hamming(h1, h2);
+        if (d < min_d) min_d = d;
+        if (d > max_d) max_d = d;
+        sum_d += d;
+    }
+
+    double avg = static_cast<double>(sum_d) / static_cast<double>(N);
+
+    std::cout << "Length " << std::dec << L
+              << " | Pairs " << N
+              << " | Hamming distance (out of 128 bits): "
+              << "min=" << min_d
+              << ", avg=" << std::fixed << std::setprecision(2) << avg
+              << ", max=" << std::dec << max_d
+              << " | ideal avg = 64\n";
+}
 
 std::vector<u8> string_to_bytes(const std::string &input) {
     return std::vector<u8>(input.begin(), input.end());
@@ -152,6 +228,13 @@ std::array<u32,4> hash(const std::string &input) {
     return merge_all_blocks_into_digest(words);
 }
 
+inline std::string random_string(size_t length, std::mt19937 &gen, std::uniform_int_distribution<size_t> &dist) {
+    std::string s;
+    s.resize(length);
+    for (size_t i = 0; i < length; ++i) s[i] = CHARSET[dist(gen)];
+    return s;
+}
+
 int main(){
 
     while(true){
@@ -163,6 +246,9 @@ int main(){
         std::cout << "         4. Hash files that differ in 1 character" << std::endl;
         std::cout << "         5. Hash empty file" << std::endl;
         std::cout << "         6. Test with file konstitucija.txt" << std::endl;
+        std::cout << "         7. Generate 100 000 random pairs of 10, 100, 500, 1000 characters length" << std::endl;
+        std::cout << "         8. Collision search in pair_num files" << std::endl;
+        std::cout << "         9. Avalanche test" << std::endl;
         int option;
         std::cin >> option;
 
@@ -179,34 +265,27 @@ int main(){
             std::cout << std::endl;
         }
 
-        if(option == 2){
+        if (option == 2) {
             std::ifstream a("files/a.txt", std::ios::binary);
             std::ifstream b("files/b.txt", std::ios::binary);
 
-            std::ostringstream buffer;
-            buffer << a.rdbuf();
-            std::string content = buffer.str();
+            std::string content_a((std::istreambuf_iterator<char>(a)), {});
+            std::string content_b((std::istreambuf_iterator<char>(b)), {});
 
-            auto digest_a = hash(content);
+            auto digest_a = hash(content_a);
             std::cout << "Hash of a.txt: ";
-            for (const auto &part : digest_a) {
+            for (const auto &part : digest_a)
                 std::cout << std::hex << std::setw(8) << std::setfill('0') << part;
-            }
             std::cout << std::endl;
 
-            buffer.clear();
-            buffer << b.rdbuf();
-            content = buffer.str();
-
-            auto digest_b = hash(content);
+            auto digest_b = hash(content_b);
             std::cout << "Hash of b.txt: ";
-            for (const auto &part : digest_b) {
+            for (const auto &part : digest_b)
                 std::cout << std::hex << std::setw(8) << std::setfill('0') << part;
-            }
             std::cout << std::endl;
-
-
         }
+
+
 
         if (option == 3) {
             std::ifstream file1("files/random3000_1.txt", std::ios::binary);
@@ -293,7 +372,67 @@ int main(){
             }
         }
 
+    if (option == 7) {
+        const size_t pairs = 100000;
+        const std::array<size_t, 4> lengths = {10, 100, 500, 1000};
+
+        std::mt19937 gen(std::random_device{}());
+        std::uniform_int_distribution<size_t> dist(0, CHARSET.size() - 1);
+
+        for (size_t L : lengths) {
+            std::string filename = "pairs_" + std::to_string(L) + ".txt";
+            std::ofstream out(filename, std::ios::binary);
+
+            for (size_t i = 0; i < pairs; ++i) {
+                std::string a = random_string(L, gen, dist);
+                std::string b = random_string(L, gen, dist);
+                out << a << '\t' << b << '\n';
+            }
+            out.close();
+            std::cout << "Wrote " << pairs << " pairs to " << filename << "\n";
+        }
     }
+
+    if (option == 8) {
+        const std::array<size_t, 4> lengths = {10, 100, 500, 1000};
+
+        for (size_t L : lengths) {
+            std::string filename = "pairs_" + std::to_string(L) + ".txt";
+            std::ifstream in(filename, std::ios::binary);
+
+            size_t collision_count = 0;
+            std::string line;
+            while (std::getline(in, line)) {
+                std::istringstream iss(line);
+                std::string a, b;
+                if (!(iss >> a >> b)){
+                    continue;
+                }
+
+                auto hash_a = hash(a);
+                auto hash_b = hash(b);
+                if (hash_a == hash_b) {
+                    ++collision_count;
+                }
+            }
+            in.close();
+            std::cout << "Total collisions for length " << L << ": " << collision_count << "\n";
+        }
+    }
+    if (option == 9) {
+        const size_t N = 25000;
+        const std::array<size_t,4> lengths = {10, 20, 50, 100};
+
+        std::mt19937 gen(std::random_device{}());
+
+        for (size_t L : lengths) {
+            avalanche_stats_for_length(L, N, gen);
+        }
+    }
+
+
+
+        }
 
     return 0;
 }
