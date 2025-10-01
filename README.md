@@ -148,7 +148,16 @@ function COMPRESS_ALL_BLOCKS(all_blocks_words) -> array[4]u32
   <img width="385" height="169" alt="Screenshot 2025-10-01 150829" src="https://github.com/user-attachments/assets/608dd496-b6ec-44af-b757-a9f453f78a35" />
 
   4. No collisions on option 8, but when testing avalanche effect, min value was always 0, which means there were some collisions
+  5. Avalanche effect results:
 
+| Input Length | Pairs  | Hamming Distance (out of 128 bits) | Ideal Avg |
+|--------------|--------|-------------------------------------|-----------|
+| 10           | 25,000 | min = 0, avg = 59.18, max = 86     | 64        |
+| 20           | 25,000 | min = 0, avg = 40.51, max = 86     | 64        |
+| 50           | 25,000 | min = 0, avg = 49.49, max = 86     | 64        |
+| 100          | 25,000 | min = 0, avg = 50.91, max = 84     | 64        |
+
+---
 
 So this hashing functions lacks good avalanche effect, and has some collisions.
 
