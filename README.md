@@ -33,7 +33,7 @@ function padding(data: vector<byte>)
         append byte(b) to data
 ```
 
-  #Pseudocode for splitting:
+  # Pseudocode for splitting:
 
   ```
   function split_into_blocks(data: vector<byte>) -> vector<array[64]byte>
@@ -44,7 +44,7 @@ function padding(data: vector<byte>)
     return blocks
 ```
 
-  #Pseudocode for splitting into words:
+  # Pseudocode for splitting into words:
 
   ```
 function BLOCKS_TO_16_WORDS_BE(blocks) -> vector<array[16]u32>
@@ -61,7 +61,7 @@ function BLOCKS_TO_16_WORDS_BE(blocks) -> vector<array[16]u32>
     return result
 ```
 
-#Pseudocode for bit_or mixing
+# Pseudocode for bit_or mixing
 
 ```
 function BIT_OR_MIX(words_vec: vector<array[16]u32>)
@@ -72,7 +72,7 @@ function BIT_OR_MIX(words_vec: vector<array[16]u32>)
             w[i] <- original[i] OR original[j]
 ```
 
-#Pseudocode for bit_xor mixing:
+# Pseudocode for bit_xor mixing:
 
 ```
 function BIT_XOR_MIX(words_vec: vector[array[16]u32])
@@ -83,7 +83,7 @@ function BIT_XOR_MIX(words_vec: vector[array[16]u32])
             w[i] <- w[i] XOR w[i+8]
 ```
 
-#Pseudocode for hashing:
+# Pseudocode for hashing:
 
 ```
 function COMPRESS_ALL_BLOCKS(all_blocks_words) -> array[4]u32
@@ -129,18 +129,23 @@ function COMPRESS_ALL_BLOCKS(all_blocks_words) -> array[4]u32
   1. Always returns fixed length string.
   2. Same input always returns same ouput (deterministic)
   3. Test averages on hashing konstitucija.txt:
-      1 lines: Time: 0.0104 ms
-      2 lines: Time: 0.0115 ms
-      4 lines: Time: 0.0124 ms
-      8 lines: Time: 0.0142 ms
-      16 lines: Time: 0.0206 ms
-      32 lines: Time: 0.0303 ms
-      64 lines: Time: 0.0583 ms
-      128 lines: Time: 0.1955 ms
-      256 lines: Time: 0.1988 ms
-      512 lines: Time: 0.4309 ms
-      789 lines: Time: 0.5235 ms
-      <img width="385" height="169" alt="Screenshot 2025-10-01 150829" src="https://github.com/user-attachments/assets/608dd496-b6ec-44af-b757-a9f453f78a35" />
+     
+| Lines | Time (ms) |
+|-------|-----------|
+| 1     | 0.0104    |
+| 2     | 0.0115    |
+| 4     | 0.0124    |
+| 8     | 0.0142    |
+| 16    | 0.0206    |
+| 32    | 0.0303    |
+| 64    | 0.0583    |
+| 128   | 0.1955    |
+| 256   | 0.1988    |
+| 512   | 0.4309    |
+| 789   | 0.5235    |
+
+
+  <img width="385" height="169" alt="Screenshot 2025-10-01 150829" src="https://github.com/user-attachments/assets/608dd496-b6ec-44af-b757-a9f453f78a35" />
 
   4. No collisions on option 8, but when testing avalanche effect, min value was always 0, which means there were some collisions
 
