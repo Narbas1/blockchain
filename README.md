@@ -126,9 +126,9 @@ function COMPRESS_ALL_BLOCKS(all_blocks_words) -> array[4]u32
 
 # Conclutions
 
-  -Always returns fixed length string.
-  -Same input always returns same ouput (deterministic)
-  -Test averages on hashing konstitucija.txt:
+  1. Always returns fixed length string.
+  2. Same input always returns same ouput (deterministic)
+  3. Test averages on hashing konstitucija.txt:
       1 lines: Time: 0.0104 ms
       2 lines: Time: 0.0115 ms
       4 lines: Time: 0.0124 ms
@@ -140,8 +140,9 @@ function COMPRESS_ALL_BLOCKS(all_blocks_words) -> array[4]u32
       256 lines: Time: 0.1988 ms
       512 lines: Time: 0.4309 ms
       789 lines: Time: 0.5235 ms
-  -No collisions on option 8, but when testing avalanche effect, min value was always 0, which means there were some collisions
-  -
+      <img width="385" height="169" alt="Screenshot 2025-10-01 150829" src="https://github.com/user-attachments/assets/608dd496-b6ec-44af-b757-a9f453f78a35" />
+
+  4. No collisions on option 8, but when testing avalanche effect, min value was always 0, which means there were some collisions
 
 
 
